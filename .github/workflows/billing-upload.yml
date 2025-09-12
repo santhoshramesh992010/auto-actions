@@ -22,6 +22,9 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Debug Host
+        run: echo "VM_HOST=${{ secrets.VM_HOST }}"
+
       - name: Run billing upload script on VM
         env:
           BILLING_PERIOD: ${{ github.event.inputs.billing_period }}
