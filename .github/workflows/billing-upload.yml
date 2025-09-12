@@ -1,0 +1,33 @@
+name: S3 Billing Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      billing_period:
+        description: 'Billing period (YYYY-MM or YYYY-MM-DD)'
+        required: false
+        default: ''
+
+jobs:
+  trigger-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install SSH client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run billing upload script on VM
+        env:
+          BILLING_PERIOD: ${{ github.event.inputs.billing_period }}
+        run: |
+          if [ -z "$BILLING_PERIOD" ]; then
+            ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "/root/s3-upload.sh"
+          else
+            ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "/root/s3-upload.sh $BILLING_PERIOD"
+          fi
