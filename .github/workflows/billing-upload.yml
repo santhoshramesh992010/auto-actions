@@ -18,8 +18,8 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Debug Host
@@ -30,7 +30,7 @@ jobs:
           BILLING_PERIOD: ${{ github.event.inputs.billing_period }}
         run: |
           if [ -z "$BILLING_PERIOD" ]; then
-            ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "/root/s3-upload.sh"
+            ssh -i ~/.ssh/id_rsa ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh"
           else
-            ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "/root/s3-upload.sh $BILLING_PERIOD"
+            ssh -i ~/.ssh/id_rsa ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh $BILLING_PERIOD"
           fi
