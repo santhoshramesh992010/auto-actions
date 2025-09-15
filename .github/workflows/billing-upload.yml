@@ -13,24 +13,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install SSH client
-        run: sudo apt-get install -y openssh-client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
 
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf "%s\n" "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Debug Host
-        run: echo "VM_HOST=${{ secrets.VM_HOST }}"
+      - name: Debug Host and User
+        run: |
+          echo "VM_HOST=${{ secrets.VM_HOST }}"
+          echo "VM_USER=${{ secrets.VM_USER }}"
 
       - name: Run billing upload script on VM
         env:
           BILLING_PERIOD: ${{ github.event.inputs.billing_period }}
         run: |
+          set -e
           if [ -z "$BILLING_PERIOD" ]; then
-            ssh -i ~/.ssh/id_rsa ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh"
           else
-            ssh -i ~/.ssh/id_rsa ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh $BILLING_PERIOD"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo /root/s3-upload.sh $BILLING_PERIOD"
           fi
